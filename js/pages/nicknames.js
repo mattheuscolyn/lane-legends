@@ -239,7 +239,7 @@ const AliasesPage = (() => {
     `;
   }
 
-  function renderNicknameTable(stats) {
+  function renderNicknameTable(stats, data) {
     if (!stats.length) {
       return '<p class="text-muted">No alias rows to show.</p>';
     }
@@ -394,7 +394,7 @@ const AliasesPage = (() => {
               <canvas id="${chartId}"></canvas>
             </div>
           </div>
-          ${renderNicknameTable(stats)}
+          ${renderNicknameTable(stats, data)}
         </div>
       `;
 
