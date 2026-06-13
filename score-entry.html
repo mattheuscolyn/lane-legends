@@ -119,7 +119,23 @@
     input[type="date"] { width: 10rem; }
     input[type="time"] { width: 8rem; }
     input[type="number"] { width: 5rem; }
+    input[type="text"].player-nickname { width: 8rem; }
     input[type="text"].player-name { width: 9rem; }
+
+    .player-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .player-rows { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .player-row-hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: -0.5rem;
+    }
 
     .hidden { display: none !important; }
 
@@ -363,14 +379,16 @@
         <code>4- 0-7 00- X- 3-6</code> (spaces between frames, <code>-</code> between balls in a frame,
         trailing dash = gutter on 2nd ball e.g. <code>4-</code> means 4 then 0).
         Keyboard: <kbd>0</kbd>–<kbd>9</kbd>, <kbd>X</kbd>, <kbd>/</kbd>, <kbd>Tab</kbd> / <kbd>Enter</kbd> to advance.
-        Frame 10: a 3rd box opens after a strike or spare. Data saves automatically in this browser.
+        Frame 10: a 3rd box opens after a strike or spare. Exported CSV includes both <code>player</code> and <code>nickname</code> columns for the dashboard.
+        Data saves automatically in this browser.
       </div>
 
       <div class="panel">
         <h2>Bulk entry (many games from photos)</h2>
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem">
           Paste one or more games below. Separate games with a blank line. First line of each block is
-          <code>YYYY-MM-DD | Lane N | Game 2 | 2:30 PM</code> (game # and time optional), then one line per player.
+          <code>YYYY-MM-DD | Lane N | Game 2 | 2:30 PM</code> (game # and time optional), then one line per player
+          using their <strong>nickname</strong> from the alley screen (e.g. <code>SHREKK:</code>).
         </p>
         <textarea id="bulkInput" rows="12" placeholder="2026-05-18 | Lane 7 | Game 1 | 7:45 PM
 SHREKK: 4- 0-7 0- 0- 0- 5- 3-5 X- 0- 3-6
@@ -395,11 +413,21 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
           <label>Session game #<input type="number" id="newSessionGame" min="1" max="99" placeholder="1"></label>
           <label>Time (photo taken)<input type="time" id="newCompletedTime"></label>
         </div>
-        <div class="form-row" id="playerNameRows">
-          <label>Player 1<input type="text" class="player-name" data-idx="0" placeholder="Name"></label>
-          <label>Player 2<input type="text" class="player-name" data-idx="1" placeholder="Name"></label>
-          <label>Player 3<input type="text" class="player-name" data-idx="2" placeholder="Name"></label>
+        <div class="player-rows" id="playerNameRows">
+          <div class="player-row" data-idx="0">
+            <label>Nickname<input type="text" class="player-nickname" placeholder="SHREKK"></label>
+            <label>Real name<input type="text" class="player-name" placeholder="Mattheus"></label>
+          </div>
+          <div class="player-row" data-idx="1">
+            <label>Nickname<input type="text" class="player-nickname" placeholder="EMLIE"></label>
+            <label>Real name<input type="text" class="player-name" placeholder="Emily"></label>
+          </div>
+          <div class="player-row" data-idx="2">
+            <label>Nickname<input type="text" class="player-nickname" placeholder="MAFUS"></label>
+            <label>Real name<input type="text" class="player-name" placeholder="Shelley"></label>
+          </div>
         </div>
+        <p class="player-row-hint">Enter the alias from the alley screen; real name fills in automatically when recognized.</p>
         <div class="form-row">
           <button type="button" id="btnAddPlayer">+ Add player</button>
         </div>
@@ -455,13 +483,58 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
   <script>
     const STORAGE_KEY = 'bowlingGames_v1';
 
+    /** Session nicknames → real player names (matches dashboard data.js) */
+    const NICKNAME_TO_PLAYER = {
+      SHREKK: 'Mattheus', MATE: 'Mattheus', MA: 'Mattheus', MAP: 'Mattheus', MAE: 'Mattheus', MEH: 'Mattheus',
+      MAFUS: 'Shelley', SHRIMP: 'Shelley', SHEL: 'Shelley', SHE: 'Shelley', WIMBY: 'Shelley',
+      EMLIE: 'Emily', EH: 'Emily',
+    };
+
     /** @type {{ games: Game[] }} */
     let state = { games: [] };
     let editingGameId = null;
     let currentPlayerIdx = 0;
 
-    /** @typedef {{ name: string, balls: string[] }} Player */
+    /** @typedef {{ player: string, nickname: string, balls: string[] }} Player */
     /** @typedef {{ id: string, date: string, lane: number|null, sessionGame: number|null, completedTime: string|null, players: Player[] }} Game */
+
+    function resolvePlayerFromNickname(nickname) {
+      const key = String(nickname || '').trim().toUpperCase();
+      return NICKNAME_TO_PLAYER[key] || null;
+    }
+
+    function displayLabel(p) {
+      const nick = (p.nickname || '').trim();
+      const pl = (p.player || '').trim();
+      if (nick && pl && nick.toUpperCase() !== pl.toUpperCase()) return `${nick} (${pl})`;
+      return nick || pl || 'Player';
+    }
+
+    function normalizePlayerEntry(nickname, player) {
+      const nick = String(nickname || '').trim();
+      let pl = String(player || '').trim();
+      if (nick && !pl) pl = resolvePlayerFromNickname(nick) || '';
+      if (!nick && pl) return { player: pl, nickname: '' };
+      if (nick && !pl) return { player: '', nickname: nick };
+      return { player: pl, nickname: nick };
+    }
+
+    function migratePlayer(p) {
+      if (p.name != null && p.player == null) {
+        const legacy = String(p.name).trim();
+        const resolved = resolvePlayerFromNickname(legacy);
+        if (resolved) {
+          p.nickname = legacy;
+          p.player = resolved;
+        } else {
+          p.player = legacy;
+          p.nickname = '';
+        }
+        delete p.name;
+      }
+      if (p.nickname == null) p.nickname = '';
+      if (p.player == null) p.player = p.nickname || '';
+    }
 
     function uid() {
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -475,6 +548,7 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
       state.games?.forEach(g => {
         if (g.sessionGame === undefined) g.sessionGame = null;
         if (g.completedTime === undefined) g.completedTime = null;
+        g.players?.forEach(migratePlayer);
       });
       if (!state.games?.length) seedGame1();
     }
@@ -491,9 +565,9 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
         sessionGame: 1,
         completedTime: null,
         players: [
-          { name: 'SHREKK', balls: makeBalls(['4','0','0','7','0','0','0','0','0','0','5','0','3','5','X','','0','0','3','6']) },
-          { name: 'EMLIE', balls: makeBalls(['0','9','7','0','1','5','8','0','0','0','1','/','7','0','0','5','4','/','0','3']) },
-          { name: 'MAFUS', balls: makeBalls(['3','0','6','0','0','0','7','0','0','0','0','7','0','7','5','4','0','6','8','0']) },
+          { player: 'Mattheus', nickname: 'SHREKK', balls: makeBalls(['4','0','0','7','0','0','0','0','0','0','5','0','3','5','X','','0','0','3','6']) },
+          { player: 'Emily', nickname: 'EMLIE', balls: makeBalls(['0','9','7','0','1','5','8','0','0','0','1','/','7','0','0','5','4','/','0','3']) },
+          { player: 'Shelley', nickname: 'MAFUS', balls: makeBalls(['3','0','6','0','0','0','7','0','0','0','0','7','0','7','5','4','0','6','8','0']) },
         ],
       }];
       saveState();
@@ -675,8 +749,11 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
         for (let i = startIdx; i < lines.length; i++) {
           const m = lines[i].match(/^([^:]+):\s*(.+)$/);
           if (!m) continue;
+          const nickname = m[1].trim();
+          const { player, nickname: nick } = normalizePlayerEntry(nickname, '');
           players.push({
-            name: m[1].trim(),
+            player,
+            nickname: nick,
             balls: parseCompactLine(m[2].trim()),
           });
         }
@@ -838,7 +915,7 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
       list.innerHTML = sorted.map(g => {
         const chips = g.players.map(p => {
           const sc = scoreGame(p.balls || emptyBalls()).total;
-          return `<span class="score-chip">${esc(p.name)}: ${sc ?? '—'}</span>`;
+          return `<span class="score-chip">${esc(displayLabel(p))}: ${sc ?? '—'}</span>`;
         }).join('');
         const lane = g.lane ? `Lane ${g.lane}` : 'Lane ?';
         const session = g.sessionGame ? `Game ${g.sessionGame}` : '';
@@ -883,19 +960,47 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
       document.getElementById('newLane').value = '';
       document.getElementById('newCompletedTime').value = nowTime24();
       updateNewGameDefaults();
-      document.querySelectorAll('.player-name').forEach((inp, i) => {
-        inp.value = i < 3 ? '' : '';
-        if (i >= 3) inp.closest('label')?.remove();
-      });
+      const rowContainer = document.getElementById('playerNameRows');
+      rowContainer.innerHTML = `
+        <div class="player-row" data-idx="0">
+          <label>Nickname<input type="text" class="player-nickname" placeholder="SHREKK"></label>
+          <label>Real name<input type="text" class="player-name" placeholder="Mattheus"></label>
+        </div>
+        <div class="player-row" data-idx="1">
+          <label>Nickname<input type="text" class="player-nickname" placeholder="EMLIE"></label>
+          <label>Real name<input type="text" class="player-name" placeholder="Emily"></label>
+        </div>
+        <div class="player-row" data-idx="2">
+          <label>Nickname<input type="text" class="player-nickname" placeholder="MAFUS"></label>
+          <label>Real name<input type="text" class="player-name" placeholder="Shelley"></label>
+        </div>`;
+      bindPlayerNameAutoFill(rowContainer);
       showView('viewNewGame');
     }
 
+    function bindPlayerNameAutoFill(container) {
+      container.querySelectorAll('.player-nickname').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const row = inp.closest('.player-row');
+          const nameInp = row?.querySelector('.player-name');
+          if (!nameInp) return;
+          const resolved = resolvePlayerFromNickname(inp.value);
+          if (resolved) nameInp.value = resolved;
+        });
+      });
+    }
+
     function addPlayerField() {
-      const row = document.getElementById('playerNameRows');
-      const count = row.querySelectorAll('.player-name').length;
-      const label = document.createElement('label');
-      label.innerHTML = `Player ${count + 1}<input type="text" class="player-name" data-idx="${count}" placeholder="Name">`;
-      row.appendChild(label);
+      const rowContainer = document.getElementById('playerNameRows');
+      const count = rowContainer.querySelectorAll('.player-row').length;
+      const div = document.createElement('div');
+      div.className = 'player-row';
+      div.dataset.idx = String(count);
+      div.innerHTML = `
+        <label>Nickname<input type="text" class="player-nickname" placeholder="Alias"></label>
+        <label>Real name<input type="text" class="player-name" placeholder="Player"></label>`;
+      rowContainer.appendChild(div);
+      bindPlayerNameAutoFill(div);
     }
 
     function startNewGame() {
@@ -903,12 +1008,24 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
       const laneVal = document.getElementById('newLane').value;
       const sessionVal = document.getElementById('newSessionGame').value;
       const completedTime = document.getElementById('newCompletedTime').value;
-      const names = [...document.querySelectorAll('.player-name')]
-        .map(i => i.value.trim())
-        .filter(Boolean);
+      const entries = [...document.querySelectorAll('#playerNameRows .player-row')].map(row => ({
+        nickname: row.querySelector('.player-nickname')?.value.trim() || '',
+        player: row.querySelector('.player-name')?.value.trim() || '',
+      })).filter(e => e.nickname || e.player);
 
       if (!date) { alert('Please enter a date.'); return; }
-      if (!names.length) { alert('Add at least one player.'); return; }
+      if (!entries.length) { alert('Add at least one player (nickname or real name).'); return; }
+
+      const players = [];
+      for (const entry of entries) {
+        const normalized = normalizePlayerEntry(entry.nickname, entry.player);
+        if (normalized.nickname && !normalized.player) {
+          alert(`Unknown nickname "${normalized.nickname}" — enter the real player name.`);
+          return;
+        }
+        if (!normalized.player) continue;
+        players.push({ ...normalized, balls: emptyBalls() });
+      }
 
       const game = {
         id: uid(),
@@ -916,7 +1033,7 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
         lane: laneVal ? parseInt(laneVal, 10) : null,
         sessionGame: sessionVal ? parseInt(sessionVal, 10) : null,
         completedTime: completedTime || null,
-        players: names.map(name => ({ name, balls: emptyBalls() })),
+        players,
       };
       state.games.push(game);
       saveState();
@@ -965,7 +1082,7 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
       const player = game.players[currentPlayerIdx];
       document.getElementById('entryGameTitle').textContent = formatGameLabel(game);
       document.getElementById('entryGameSub').textContent =
-        `Player ${currentPlayerIdx + 1} of ${game.players.length}: ${player.name}`;
+        `Player ${currentPlayerIdx + 1} of ${game.players.length}: ${displayLabel(player)}`;
 
       document.getElementById('editSessionGame').value = game.sessionGame ?? '';
       document.getElementById('editCompletedTime').value = game.completedTime ?? '';
@@ -977,7 +1094,7 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
       tabs.innerHTML = game.players.map((p, i) => {
         const sc = scoreGame(p.balls).total;
         const done = sc !== null;
-        return `<button type="button" class="player-tab ${i === currentPlayerIdx ? 'active' : ''} ${done ? 'done' : ''}" data-idx="${i}">${esc(p.name)}${sc !== null ? ` (${sc})` : ''}</button>`;
+        return `<button type="button" class="player-tab ${i === currentPlayerIdx ? 'active' : ''} ${done ? 'done' : ''}" data-idx="${i}">${esc(displayLabel(p))}${sc !== null ? ` (${sc})` : ''}</button>`;
       }).join('');
       tabs.querySelectorAll('.player-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -1194,7 +1311,7 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
     }
 
     function exportCSV() {
-      const headers = ['game_id', 'date', 'lane', 'session_game', 'completed_time', 'player'];
+      const headers = ['game_id', 'date', 'lane', 'session_game', 'completed_time', 'player', 'nickname'];
       for (let f = 1; f <= 10; f++) {
         headers.push(`f${f}_b1`, `f${f}_b2`);
         if (f === 10) headers.push('f10_b3');
@@ -1204,8 +1321,12 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
       const rows = [headers];
       for (const g of state.games) {
         for (const p of g.players) {
+          migratePlayer(p);
           const sc = scoreGame(p.balls).total;
-          const row = [g.id, g.date, g.lane ?? '', g.sessionGame ?? '', g.completedTime ?? '', p.name];
+          const row = [
+            g.id, g.date, g.lane ?? '', g.sessionGame ?? '', g.completedTime ?? '',
+            p.player, p.nickname,
+          ];
           for (let f = 0; f < 10; f++) {
             row.push(p.balls[frameSlot(f, 0)] ?? '');
             row.push(p.balls[frameSlot(f, 1)] ?? '');
@@ -1258,7 +1379,14 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
             balls[frameSlot(f, 1)] = row[`f${n}_b2`] || '';
             if (f === 9) balls[frameSlot(f, 2)] = row.f10_b3 || '';
           }
-          gamesMap.get(gid).players.push({ name: row.player, balls });
+          let nickname = (row.nickname || '').trim();
+          let rawPlayer = (row.player || '').trim();
+          if (!nickname && rawPlayer && resolvePlayerFromNickname(rawPlayer)) {
+            nickname = rawPlayer;
+            rawPlayer = resolvePlayerFromNickname(rawPlayer) || rawPlayer;
+          }
+          const player = rawPlayer || resolvePlayerFromNickname(nickname) || nickname;
+          gamesMap.get(gid).players.push({ player, nickname, balls });
         }
 
         state.games = [...gamesMap.values()];
@@ -1289,6 +1417,7 @@ ALICE: X X X X X X X X X X-X-X"></textarea>
     }
 
     document.getElementById('newDate').addEventListener('change', updateNewGameDefaults);
+    bindPlayerNameAutoFill(document.getElementById('playerNameRows'));
     document.getElementById('editSessionGame').addEventListener('change', saveEntryMetadata);
     document.getElementById('editCompletedTime').addEventListener('change', saveEntryMetadata);
     document.getElementById('btnBulkImport').addEventListener('click', bulkImport);
