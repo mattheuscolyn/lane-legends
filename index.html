@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Lane Legends — track bowling averages, frame trends, head-to-head records, and session scorecards for your league night.">
+  <meta property="og:title" content="Lane Legends — Bowling Stats">
+  <meta property="og:description" content="Bowling analytics dashboard for league nights: season overview, player stats, frame analysis, and head-to-head matchups.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B3%3C/text%3E%3C/svg%3E">
+  <title>Lane Legends — Bowling Stats</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+</head>
+<body>
+  <div id="loadingOverlay" class="loading-overlay" aria-live="polite" aria-busy="true">
+    <div class="loading-spinner" role="status" aria-label="Loading"></div>
+    <p class="loading-text">Loading your stats…</p>
+  </div>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon" aria-hidden="true">🎳</span>
+        <div class="sidebar-brand-text">
+          <div class="brand-name">Lane Legends</div>
+          <div class="brand-tag">Bowling Analytics</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <a href="#overview" class="nav-link active" data-route="overview" aria-label="Overview">
+          <span class="nav-icon" aria-hidden="true">📊</span>
+          <span class="nav-text">Overview</span>
+        </a>
+        <a href="#player" class="nav-link" data-route="player" aria-label="Player Dive">
+          <span class="nav-icon" aria-hidden="true">👤</span>
+          <span class="nav-text">Player Dive</span>
+        </a>
+        <a href="#frames" class="nav-link" data-route="frames" aria-label="Frame Analysis">
+          <span class="nav-icon" aria-hidden="true">🎯</span>
+          <span class="nav-text">Frame Analysis</span>
+        </a>
+        <a href="#h2h" class="nav-link" data-route="h2h" aria-label="Head-to-Head">
+          <span class="nav-icon" aria-hidden="true">⚔️</span>
+          <span class="nav-text">Head-to-Head</span>
+        </a>
+        <a href="#sessions" class="nav-link" data-route="sessions" aria-label="Sessions">
+          <span class="nav-icon" aria-hidden="true">📅</span>
+          <span class="nav-text">Sessions</span>
+        </a>
+        <a href="#aliases" class="nav-link" data-route="aliases" aria-label="Aliases">
+          <span class="nav-icon nav-icon--ti" aria-hidden="true"><i class="ti ti-masks-theater"></i></span>
+          <span class="nav-text">Aliases</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="legend-title">Players</div>
+        <ul id="playerLegend" class="player-legend"></ul>
+        <label class="csv-upload">
+          <span class="csv-upload-label">Load CSV</span>
+          <input type="file" id="csvFileInput" accept=".csv" hidden>
+        </label>
+        <button type="button" id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+          <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+          <span class="theme-toggle-text">Dark mode</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <h1 id="pageTitle">Overview</h1>
+          <p id="pageSubtitle" class="page-subtitle">League performance at a glance</p>
+        </div>
+        <div id="headerMeta" class="header-meta"></div>
+      </header>
+
+      <div id="pageContent" class="page-content"></div>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/pages/overview.js"></script>
+  <script src="js/pages/player.js"></script>
+  <script src="js/pages/frames.js"></script>
+  <script src="js/pages/headtohead.js"></script>
+  <script src="js/pages/sessions.js"></script>
+  <script src="js/pages/nicknames.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
