@@ -1,0 +1,50 @@
+name: Verify scores
+
+on:
+  push:
+    paths:
+      - "data/scores.csv"
+      - "js/**"
+      - "admin/**"
+      - "tools/**"
+      - "tests/**"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - run: pip install pandas
+
+      - name: Golden tests (JS)
+        run: node tests/test_js_scoring.js
+
+      - name: Golden tests (Python)
+        run: python tests/test_python_scoring.py
+
+      - name: JS/Python cross-parity
+        run: python tests/verify_implementation_parity.py
+
+      - name: Validate canonical CSV
+        run: python tools/save_scores.py -i data/scores.csv --verify-only
+
+      - name: Python metrics
+        run: python tools/verify_metrics.py
+
+      - name: JS stress tests
+        run: node tools/verify_stress.js
+
+      - name: Final score self-consistency
+        run: node tools/verify_final_score.js
+

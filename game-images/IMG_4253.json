@@ -1,0 +1,111 @@
+{
+  "source_image": "IMG_4253.jpeg",
+  "lane": 6,
+  "session_game": 1,
+  "date": "",
+  "completed_time": "",
+  "players": [
+    {
+      "nickname": "MOOO",
+      "final_score": 69,
+      "frames": [
+        {
+          "b1": 1,
+          "b2": 5
+        },
+        {
+          "b1": 0,
+          "b2": 7
+        },
+        {
+          "b1": 8,
+          "b2": 1,
+          "low_confidence": true
+        },
+        {
+          "b1": 3,
+          "b2": 0
+        },
+        {
+          "b1": 5,
+          "b2": 1
+        },
+        {
+          "b1": 0,
+          "b2": 8
+        },
+        {
+          "b1": 5,
+          "b2": 3
+        },
+        {
+          "b1": 9,
+          "b2": 0
+        },
+        {
+          "b1": 0,
+          "b2": 7
+        },
+        {
+          "b1": 1,
+          "b2": 5
+        }
+      ]
+    },
+    {
+      "nickname": "SQUA",
+      "final_score": 62,
+      "frames": [
+        {
+          "b1": 0,
+          "b2": 0
+        },
+        {
+          "b1": 8,
+          "b2": 0,
+          "low_confidence": true
+        },
+        {
+          "b1": 1,
+          "b2": 6,
+          "low_confidence": true
+        },
+        {
+          "b1": 7,
+          "b2": 0,
+          "low_confidence": true
+        },
+        {
+          "b1": 0,
+          "b2": 9,
+          "low_confidence": true
+        },
+        {
+          "b1": 7,
+          "b2": 0,
+          "low_confidence": true
+        },
+        {
+          "b1": 4,
+          "b2": 3,
+          "low_confidence": true
+        },
+        {
+          "b1": 9,
+          "b2": 0,
+          "low_confidence": true
+        },
+        {
+          "b1": 1,
+          "b2": 0,
+          "low_confidence": true
+        },
+        {
+          "b1": 7,
+          "b2": 0,
+          "low_confidence": true
+        }
+      ]
+    }
+  ]
+}

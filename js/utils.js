@@ -34,60 +34,16 @@ const BowlingUtils = (() => {
     return n == null || isNaN(n) ? null : Math.round(n * 10) / 10;
   }
 
-  /** Convert parsed frames to a flat roll list for scoring */
   function framesToRolls(frames) {
-    const rolls = [];
-    for (const frame of frames) {
-      for (const ball of frame.balls) {
-        if (ball != null) rolls.push(ball);
-      }
-    }
-    return rolls;
+    return BowlingCore.framesToRolls(frames);
   }
 
-  /**
-   * Calculate final score and per-frame cumulative totals from structured frames.
-   * Strikes carry next 2 balls; spares carry next 1; 10th frame sums all rolls.
-   */
   function calcBowlingScore(frames) {
-    const rolls = framesToRolls(frames);
-    if (!rolls.length) return { total: null, frameTotals: Array(10).fill(null) };
-
-    const frameTotals = [];
-    let total = 0;
-    let idx = 0;
-
-    for (let f = 0; f < 10; f++) {
-      if (idx >= rolls.length) {
-        frameTotals.push(null);
-        continue;
-      }
-
-      let frameScore;
-      if (f === 9) {
-        frameScore = 0;
-        while (idx < rolls.length) frameScore += rolls[idx++];
-      } else if (rolls[idx] === 10) {
-        frameScore = 10 + (rolls[idx + 1] ?? 0) + (rolls[idx + 2] ?? 0);
-        idx += 1;
-      } else if (idx + 1 < rolls.length && rolls[idx] + rolls[idx + 1] === 10) {
-        frameScore = 10 + (rolls[idx + 2] ?? 0);
-        idx += 2;
-      } else {
-        frameScore = (rolls[idx] ?? 0) + (rolls[idx + 1] ?? 0);
-        idx += 2;
-      }
-      total += frameScore;
-      frameTotals.push(total);
-    }
-
-    const complete = frameTotals.every(t => t != null);
-    return { total: complete ? total : null, frameTotals };
+    return BowlingCore.calcBowlingScore(frames);
   }
 
-  /** Total pins knocked down in a frame (not cumulative score) */
   function framePinTotal(frame) {
-    return frame.balls.reduce((sum, b) => sum + (b ?? 0), 0);
+    return BowlingCore.framePinTotal(frame);
   }
 
   function getSessionGames(data, date) {
@@ -194,19 +150,6 @@ const BowlingUtils = (() => {
         ...buildNicknameStat(games, nickname, player, data),
       }))
       .sort((a, b) => (b.avgScore ?? 0) - (a.avgScore ?? 0));
-  }
-
-  function getMostMemorable(data, playerName) {
-    const stats = getNicknameStats(data, playerName);
-    if (!stats.length) return null;
-
-    const qualified = stats.filter(s => s.gamesPlayed >= 2);
-    if (qualified.length) return qualified[0];
-
-    return stats.reduce((best, s) => {
-      if (!best || (s.highGame ?? 0) > (best.highGame ?? 0)) return s;
-      return best;
-    }, null);
   }
 
   function getPlayerStats(data, playerName) {
@@ -374,10 +317,7 @@ const BowlingUtils = (() => {
   }
 
   function formatDate(d) {
-    if (!d) return '—';
-    const [y, m, day] = d.split('-');
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${months[parseInt(m, 10) - 1]} ${parseInt(day, 10)}, ${y}`;
+    return BowlingCore.formatDate(d);
   }
 
   function formatTime(time24) {
@@ -406,13 +346,11 @@ const BowlingUtils = (() => {
     getPlayerColor,
     resetPlayerColors,
     calcBowlingScore,
-    framesToRolls,
     framePinTotal,
     getSessionGames,
     resolveNickname,
     getNicknameStats,
     getGroupNicknameStats,
-    getMostMemorable,
     getPlayerStats,
     generateFunFacts,
     formatDate,

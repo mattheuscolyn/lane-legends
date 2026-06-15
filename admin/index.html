@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lane Legends — Score Admin</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B3%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>🎳 Score Admin</h1>
+        <p>Entry · validation · export to data/scores.csv</p>
+      </div>
+      <div class="toolbar">
+        <button type="button" class="primary" id="btnNew">+ New Game</button>
+        <button type="button" id="btnSave">Save CSV</button>
+      </div>
+      <div class="toolbar">
+        <button type="button" id="btnReload">Reload</button>
+        <button type="button" id="btnLoadFile">Load CSV</button>
+        <button type="button" id="btnBulk">Bulk paste</button>
+        <input type="file" id="fileInput" accept=".csv" hidden>
+      </div>
+      <div class="search-box">
+        <input type="search" id="searchInput" placeholder="Search date, lane, player…">
+      </div>
+      <div class="game-list" id="gameList"></div>
+      <div class="sidebar-footer">
+        Run <code>Open Admin.bat</code> or <code>python -m http.server 8080</code><br>
+        Dashboard: <a href="../index.html">Lane Legends</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="main-header">
+        <h2 id="editorTitle">Score Admin</h2>
+      </header>
+      <div class="validation-bar ok" id="validationBar">Loading…</div>
+      <div class="editor" id="editor">
+        <div class="empty-editor"><p>Loading scores…</p></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="bulkModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Bulk paste games</h3>
+      <p class="modal-hint">One block per game (blank line between). Header: <code>YYYY-MM-DD | Lane 7 | Game 1 | 8:30 PM</code>. Player lines: <code>SHREKK: 4- 0-7 X- …</code></p>
+      <textarea id="bulkText" rows="14"></textarea>
+      <div class="modal-actions">
+        <button type="button" class="primary" id="btnBulkApply">Import games</button>
+        <button type="button" id="btnBulkClose">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="../js/bowling-core.js"></script>
+  <script src="../js/nickname-map.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

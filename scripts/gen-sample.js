@@ -1,33 +1,21 @@
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
+
+const root = path.join(__dirname, "..");
+const sandbox = { module: { exports: {} }, exports: {} };
+vm.createContext(sandbox);
+vm.runInContext(
+  fs.readFileSync(path.join(root, "js/bowling-core.js"), "utf8") + "\nthis.BowlingCore = BowlingCore;",
+  sandbox
+);
+const { parseCSVLine } = sandbox.BowlingCore;
 
 const src = fs.readFileSync(
-  path.join(__dirname, "../bowling-games-2026-06-12.csv"),
+  path.join(__dirname, "../data/exports/bowling-games-2026-06-12.csv"),
   "utf8"
 );
 const lines = src.trim().split(/\r?\n/);
-
-function parseCSVLine(line) {
-  const out = [];
-  let cur = "";
-  let inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (inQ) {
-      if (c === '"' && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else if (c === '"') inQ = false;
-      else cur += c;
-    } else if (c === '"') inQ = true;
-    else if (c === ",") {
-      out.push(cur);
-      cur = "";
-    } else cur += c;
-  }
-  out.push(cur);
-  return out;
-}
 
 const headers = parseCSVLine(lines[0]);
 const rows = lines.slice(1).map((l) =>
